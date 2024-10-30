@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.artillexstudios.axtrade.AxTrade.CONFIG;
 import static com.artillexstudios.axtrade.AxTrade.LANG;
@@ -44,6 +45,11 @@ public class Requests {
 
         if (sender.equals(receiver)) {
             MESSAGEUTILS.sendLang(sender, "request.cant-trade-self", replacements);
+            return;
+        }
+
+        if (Objects.equals(sender.getAddress(), receiver.getAddress())) {
+            MESSAGEUTILS.sendLang(sender, "request.cant-trade-self-ip", replacements);
             return;
         }
 
