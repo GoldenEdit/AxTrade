@@ -6,6 +6,8 @@ import com.artillexstudios.axapi.scheduler.ScheduledTask;
 import com.artillexstudios.axapi.scheduler.Scheduler;
 import com.artillexstudios.axapi.utils.Pair;
 import com.artillexstudios.axapi.utils.StringUtils;
+import com.artillexstudios.axtrade.hooks.unifiedmetrics.MetricType;
+import com.artillexstudios.axtrade.hooks.unifiedmetrics.MetricsManager;
 import com.artillexstudios.axtrade.utils.BlackListUtils;
 import com.artillexstudios.axtrade.utils.NumberUtils;
 import com.artillexstudios.axtrade.utils.ShulkerUtils;
@@ -57,15 +59,22 @@ public class TradeGui extends GuiFrame {
 
         gui.setDefaultTopClickAction(event -> {
             final ItemStack it = event.getClick() == ClickType.NUMBER_KEY ? event.getView().getBottomInventory().getItem(event.getHotbarButton()) : event.getCurrentItem();
+            MetricsManager.getInstance().incrementMetric(MetricType.INVENTORY_INTERACTIONS);
+            if (event.getClick() == ClickType.NUMBER_KEY) {
+                event.setCancelled(true);
+                return;
+            }
+
 //            if (it != null && NBTUtils.containsNBT(it, "axtrade-full-slot")) {
 //                event.setCancelled(true);
 //                return;
 //            }
-            if (BlackListUtils.isBlackListed(it)) {
-                event.setCancelled(true);
-                MESSAGEUTILS.sendLang(player.getPlayer(), "trade.blacklisted-item");
-                return;
-            }
+
+//            if (BlackListUtils.isBlackListed(it)) {
+//                event.setCancelled(true);
+//                MESSAGEUTILS.sendLang(player.getPlayer(), "trade.blacklisted-item");
+//                return;
+//            }
 
             if (event.getCurrentItem() != null && event.getClick().isRightClick() && event.getCurrentItem().getType().toString().endsWith("SHULKER_BOX")) {
                 event.setCancelled(true);
@@ -105,6 +114,7 @@ public class TradeGui extends GuiFrame {
         });
 
         gui.setDragAction(event -> {
+            MetricsManager.getInstance().incrementMetric(MetricType.INVENTORY_INTERACTIONS);
             boolean ownInv = true;
             for (int s : event.getRawSlots()) {
                 if (s > 53) continue;
@@ -125,9 +135,15 @@ public class TradeGui extends GuiFrame {
 
         gui.setPlayerInventoryAction(event -> {
             final ItemStack it = event.getClick() == ClickType.NUMBER_KEY ? event.getView().getBottomInventory().getItem(event.getHotbarButton()) : event.getCurrentItem();
-            if (BlackListUtils.isBlackListed(it)) {
+            MetricsManager.getInstance().incrementMetric(MetricType.INVENTORY_INTERACTIONS);
+//            if (BlackListUtils.isBlackListed(it)) {
+//                event.setCancelled(true);
+//                MESSAGEUTILS.sendLang(player.getPlayer(), "trade.blacklisted-item");
+//                return;
+//            }
+
+            if (event.getSlot() >= 0 && event.getSlot() <= 8) {
                 event.setCancelled(true);
-                MESSAGEUTILS.sendLang(player.getPlayer(), "trade.blacklisted-item");
                 return;
             }
 
