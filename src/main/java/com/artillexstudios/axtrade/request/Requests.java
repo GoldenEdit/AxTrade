@@ -5,13 +5,25 @@ import com.artillexstudios.axapi.utils.StringUtils;
 import com.artillexstudios.axtrade.api.events.AxTradeRequestEvent;
 import com.artillexstudios.axtrade.trade.Trades;
 import com.artillexstudios.axtrade.utils.SoundUtils;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.IntegerFlag;
+import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
+import com.sk89q.worldguard.protection.regions.RegionQuery;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
@@ -48,7 +60,12 @@ public class Requests {
             return;
         }
 
-        if (Objects.equals(sender.getAddress(), receiver.getAddress())) {
+        InetAddress senderIP = sender.getAddress().getAddress();
+        InetAddress receiverIP = receiver.getAddress().getAddress();
+        boolean isSameIP = Objects.equals(senderIP, receiverIP);
+        if (sender.hasPermission("axtrade.admin") || receiver.hasPermission("axtrade.admin")) isSameIP = false;
+
+        if (isSameIP) {
             MESSAGEUTILS.sendLang(sender, "request.cant-trade-self-ip", replacements);
             return;
         }
