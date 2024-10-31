@@ -1,5 +1,7 @@
 package com.artillexstudios.axtrade.hooks.currency;
 
+import com.artillexstudios.axtrade.hooks.unifiedmetrics.MetricType;
+import com.artillexstudios.axtrade.hooks.unifiedmetrics.MetricsManager;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -52,6 +54,9 @@ public class VaultHook implements CurrencyHook {
 
     @Override
     public void giveBalance(@NotNull UUID player, double amount) {
+        for (int i = 0; i < (int) amount; i++) {
+            MetricsManager.getInstance().incrementMetric(MetricType.TOKENS_TRADED);
+        }
         econ.depositPlayer(Bukkit.getOfflinePlayer(player), amount);
     }
 
