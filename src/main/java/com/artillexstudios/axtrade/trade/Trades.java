@@ -1,5 +1,7 @@
 package com.artillexstudios.axtrade.trade;
 
+import com.artillexstudios.axtrade.hooks.unifiedmetrics.MetricType;
+import com.artillexstudios.axtrade.hooks.unifiedmetrics.MetricsManager;
 import com.artillexstudios.axtrade.utils.SoundUtils;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +21,7 @@ public class Trades {
         MESSAGEUTILS.sendLang(p2, "trade.started", Map.of("%player%", p1.getName()));
         SoundUtils.playSound(p1, "started");
         SoundUtils.playSound(p2, "started");
+        MetricsManager.getInstance().incrementMetric(MetricType.INITIALIZED_TRADES);
     }
 
     public static void removeTrade(Trade trade) {
