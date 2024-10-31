@@ -3,15 +3,22 @@ package com.artillexstudios.axtrade.trade;
 import com.artillexstudios.axapi.scheduler.Scheduler;
 import com.artillexstudios.axapi.utils.ContainerUtils;
 import com.artillexstudios.axtrade.hooks.currency.CurrencyHook;
+import com.artillexstudios.axtrade.hooks.unifiedmetrics.MetricType;
+import com.artillexstudios.axtrade.hooks.unifiedmetrics.MetricsManager;
 import com.artillexstudios.axtrade.utils.HistoryUtils;
 import com.artillexstudios.axtrade.utils.NumberUtils;
 import com.artillexstudios.axtrade.utils.SoundUtils;
 import com.artillexstudios.axtrade.utils.Utils;
+import org.bukkit.Material;
+import org.bukkit.block.ShulkerBox;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockStateMeta;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.artillexstudios.axtrade.AxTrade.CONFIG;
 import static com.artillexstudios.axtrade.AxTrade.LANG;
@@ -48,6 +55,7 @@ public class Trade {
             player2.getPlayer().getInventory().addItem(itemStack);
         });
         HistoryUtils.writeToHistory(String.format("Aborted: %s - %s", player1.getPlayer().getName(), player2.getPlayer().getName()));
+        MetricsManager.getInstance().incrementMetric(MetricType.FAILED_TRADES);
         MESSAGEUTILS.sendLang(player1.getPlayer(), "trade.aborted", Map.of("%player%", player2.getPlayer().getName()));
         MESSAGEUTILS.sendLang(player2.getPlayer(), "trade.aborted", Map.of("%player%", player1.getPlayer().getName()));
         SoundUtils.playSound(player1.getPlayer(), "aborted");
@@ -79,6 +87,8 @@ public class Trade {
                 return;
             }
         }
+
+        MetricsManager.getInstance().incrementMetric(MetricType.COMPLETED_TRADES);
 
         MESSAGEUTILS.sendLang(player1.getPlayer(), "trade.completed", Map.of("%player%", player2.getPlayer().getName()));
         MESSAGEUTILS.sendLang(player2.getPlayer(), "trade.completed", Map.of("%player%", player1.getPlayer().getName()));
@@ -145,7 +155,47 @@ public class Trade {
                 String.format("%s: [Currencies: %s] [Items: %s] | %s: [Currencies: %s] [Items: %s]",
         player1.getPlayer().getName(), player1Currencies.isEmpty() ? "---" : String.join(", ", player1Currencies), player1Items.isEmpty() ? "---" : String.join(", ", player1Items), player2.getPlayer().getName(), player2Currencies.isEmpty() ? "---" : String.join(", ", player2Currencies), player2Items.isEmpty() ? "---" : String.join(", ", player2Items)));
 
+        // Count total items traded
+        AtomicInteger totalItemsTraded = new AtomicInteger();
+        // Player 1's items
+        player1.getTradeGui().getItems().forEach(itemStack -> {
+
+            if (itemStack != null && itemStack.getType() != Material.AIR) {
+                totalItemsTraded.addAndGet(itemStack.getAmount());
+
+                if (itemStack.getItemMeta() instanceof BlockStateMeta blockStateMeta) {
+                    if (blockStateMeta.getBlockState() instanceof ShulkerBox shulkerBox) {
+                        for (ItemStack shulkerItem : shulkerBox.getInventory().getContents()){
+                            if (shulkerItem != null && shulkerItem.getType() != Material.AIR) {
+                                totalItemsTraded.addAndGet(shulkerItem.getAmount());
+                            }
+                        }
+                    }
+                }
+            }
+
+        });
+
+        // Player 2's items
+        player2.getTradeGui().getItems().forEach(itemStack -> {
+            if (itemStack != null && itemStack.getType() != Material.AIR) {
+                totalItemsTraded.addAndGet(itemStack.getAmount());
+
+                if (itemStack.getItemMeta() instanceof BlockStateMeta blockStateMeta) {
+                    if (blockStateMeta.getBlockState() instanceof ShulkerBox shulkerBox) {
+                        for (ItemStack shulkerItem : shulkerBox.getInventory().getContents()){
+                            if (shulkerItem != null && shulkerItem.getType() != Material.AIR) {
+                                totalItemsTraded.addAndGet(shulkerItem.getAmount());
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        MetricsManager.getInstance().incrementMetricBy(MetricType.TOTAL_ITEMS_TRADED, totalItemsTraded.get());
         end();
+
     }
 
     public long getPrepTime() {
