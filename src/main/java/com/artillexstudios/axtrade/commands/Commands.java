@@ -10,11 +10,22 @@ import com.artillexstudios.axtrade.trade.Trades;
 import com.artillexstudios.axtrade.utils.CommandMessages;
 import com.artillexstudios.axtrade.utils.NumberUtils;
 import com.artillexstudios.axtrade.utils.SoundUtils;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
+import com.sk89q.worldguard.protection.regions.RegionQuery;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.metadata.MetadataValue;
 import org.jetbrains.annotations.NotNull;
 import revxrsal.commands.annotation.DefaultFor;
 import revxrsal.commands.annotation.Optional;
@@ -53,6 +64,18 @@ public class Commands implements OrphanCommand {
 
     @DefaultFor({"~"})
     public void trade(@NotNull Player sender, @Optional Player other) {
+        Location slocation = sender.getLocation();
+        com.sk89q.worldedit.util.Location weLocation1 = BukkitAdapter.adapt(slocation);
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionQuery query = container.createQuery();
+
+        ApplicableRegionSet regions = query.getApplicableRegions(weLocation1);
+            LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(sender);
+            if (!regions.testState(localPlayer, AxTrade.TRADING)) {
+                MESSAGEUTILS.sendLang(sender, "request.spawn-only", Map.of("%player%", sender.getName()));
+                return;
+            }
+
         if (other == null) {
             help(sender);
             return;
@@ -68,6 +91,18 @@ public class Commands implements OrphanCommand {
             MESSAGEUTILS.sendLang(sender, "request.no-request", Map.of("%player%", other.getName()));
             return;
         }
+
+        Location slocation = sender.getLocation();
+        com.sk89q.worldedit.util.Location weLocation1 = BukkitAdapter.adapt(slocation);
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionQuery query = container.createQuery();
+
+        ApplicableRegionSet regions = query.getApplicableRegions(weLocation1);
+            LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(sender);
+            if (!regions.testState(localPlayer, AxTrade.TRADING)) {
+                MESSAGEUTILS.sendLang(sender, "request.spawn-only", Map.of("%player%", sender.getName()));
+                return;
+            }
 
         Requests.addRequest(sender, other);
     }
