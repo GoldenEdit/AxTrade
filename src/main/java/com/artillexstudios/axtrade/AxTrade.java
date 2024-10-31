@@ -14,15 +14,25 @@ import com.artillexstudios.axapi.utils.StringUtils;
 import com.artillexstudios.axtrade.commands.Commands;
 import com.artillexstudios.axtrade.currencyconverter.CurrencyConverter;
 import com.artillexstudios.axtrade.hooks.HookManager;
+import com.artillexstudios.axtrade.hooks.unifiedmetrics.TradeCollectorCollection;
 import com.artillexstudios.axtrade.lang.LanguageManager;
 import com.artillexstudios.axtrade.listeners.EntityInteractListener;
 import com.artillexstudios.axtrade.listeners.TradeListeners;
+import com.artillexstudios.axtrade.trade.Trade;
 import com.artillexstudios.axtrade.trade.TradeTicker;
 import com.artillexstudios.axtrade.utils.NumberUtils;
 import com.artillexstudios.axtrade.utils.UpdateNotifier;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.IntegerFlag;
+import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
+import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import dev.cubxity.plugins.metrics.api.UnifiedMetrics;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.io.File;
 
@@ -44,6 +54,12 @@ public final class AxTrade extends AxPlugin {
         return instance;
     }
 
+    public static StateFlag TRADING;
+
+    public void onLoad() {
+        super.onLoad();
+        registerFlags();
+    }
     public void enable() {
         instance = this;
 
@@ -77,9 +93,35 @@ public final class AxTrade extends AxPlugin {
         Bukkit.getConsoleSender().sendMessage(StringUtils.formatToString("&#00FFDD[AxTrade] Loaded plugin!"));
 
         if (CONFIG.getBoolean("update-notifier.enabled", true)) new UpdateNotifier(this, 5943);
+
+        RegisteredServiceProvider<UnifiedMetrics> registration =
+                getServer().getServicesManager().getRegistration(UnifiedMetrics.class);
+        if (registration != null) {
+            UnifiedMetrics api = registration.getProvider();
+            api.getMetricsManager().registerCollection(new TradeCollectorCollection());
+            getLogger().info("[GoldenEdit Addition] Registered UnifiedMetrics logging!");
+
+
+        }
     }
 
-    public void updateFlags() {
+    public void updateFlags() { // This is not WorldGaurd
         FeatureFlags.USE_LEGACY_HEX_FORMATTER.set(true);
+    }
+
+    private void registerFlags() { // This is WorldGaurd :)
+        FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
+        try {
+            StateFlag flag = new StateFlag("trading", false);
+            registry.register(flag);
+            TRADING = flag;
+        } catch (FlagConflictException e) {
+            Flag<?> existing = registry.get("trading");
+            if (existing instanceof IntegerFlag) {
+                TRADING = (StateFlag) existing;
+            } else {
+                getLogger().severe("Trading flag conflict: existing flag is not an StateFlag");
+            }
+        }
     }
 }
