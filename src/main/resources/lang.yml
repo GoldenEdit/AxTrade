@@ -63,6 +63,7 @@ request:
   not-accepting: "&#CCFFEEThis player is not accepting trades right now!"
   disallowed-gamemode: "&#CCFFEEEither you or the other player is in a disallowed gamemode!"
   blacklisted-world: "&#CCFFEETrades are disabled in this world!"
+  spawn-only: "&#CCFFEEYou can only trade at spawn!"
   expired: "&#CCFFEEYour trade request to &#00FFDD%player% &#CCFFEEhas expired!"
 
 # this must be 4 lines
